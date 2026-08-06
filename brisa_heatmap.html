@@ -27,14 +27,15 @@
   .legend-dot { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #ddd; }
   .table-wrap { overflow: auto; padding: 16px 20px 60px; max-height: calc(100vh - 190px); }
   table { border-collapse: collapse; white-space: nowrap; }
-  th, td { border: 1px solid #eee; }
-  th { background: #f7f7f7; color: #444; font-size: 10px; font-weight: 600; padding: 4px 3px; text-align: center; position: sticky; top: 0; z-index: 50; height: 130px; vertical-align: bottom; }
-  th.rotated { padding-bottom: 6px; }
-  th.rotated span { display: inline-block; transform: rotate(-60deg); transform-origin: bottom left; white-space: nowrap; }
+  th, td { border: 1px solid #d5d5d5; }
+  th { background: #f7f7f7; color: #444; font-size: 10px; font-weight: 600; padding: 4px 3px; text-align: center; position: sticky; top: 0; z-index: 50; height: 175px; vertical-align: bottom; }
+  th.rotated { padding-bottom: 8px; }
+  th.rotated:nth-child(even) { background: #efefef; }
+  th.rotated span { display: inline-block; transform: rotate(-82deg); transform-origin: bottom left; white-space: nowrap; }
   th.villa-col { position: sticky; left: 0; top: 0; z-index: 60; background: #f0f0f0; min-width: 74px; height: auto; vertical-align: middle; border-right: 2px solid #ccc; }
   thead tr th:nth-child(2) { padding-left: 14px; }
   td.villa-name { position: sticky; left: 0; background: #fafafa; font-weight: 600; font-size: 11px; padding: 4px 8px; z-index: 40; border-right: 2px solid #ddd; }
-  td.status { width: 22px; height: 22px; text-align: center; }
+  td.status { width: 30px; height: 26px; text-align: center; }
   td.done { background: var(--done-bg); }
   td.progress { background: var(--progress-bg); }
   td.pending { background: var(--pending-bg); }
