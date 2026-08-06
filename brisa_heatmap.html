@@ -74,6 +74,12 @@ const PROJECT_NAME = 'Brisa';
 
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
 
+// Google's CSV export blanks the header text for some columns (observed on
+// this sheet) while still exporting their data correctly. This is the true
+// list of work names in order, used only to fill in blanks positionally —
+// if the export already has a name for a column, that name wins.
+const FALLBACK_WORKS = ['Bowplank','Excavation','Footplat + pedestal','Stone masonry','Tie beams','Concrete floors','Floor finishing','Stairs','Plant box','First floor columns','First floor beams','Second floor slab','Second floor columns','Second floor beams','Second floor roof','Walls','LSF truss','Roof cover','Drainage','Insulation','Interior ceilings','Bathroom walls','Bathroom waterproofing','Power lines','Light lines','Grounding','Panel','Fresh water pipes','Sewage pipes','Hot water pipes','LSF wardrobe','Kitchen set','Dining table','Bedframe + nakas','Plinth','Bathroom floor tiles','Shower','Toilet','Sink 1','Outlets + switches','Lights','Exterior paint','Interior paint','Pergola','Doors','Windows','AC 1','AC 2','TV','Fridge','Stove','Sink 2','Water dispenser','Bed','Wastafel table','TV shelf','Sofa','Stools','Rugs','Plants'];
+
 function parseCSV(text) {
   const rows = [];
   let row = [], field = '', inQuotes = false;
@@ -145,10 +151,17 @@ function render(rows) {
     ? `Última actualización: ${dateMatch.trim()}`
     : '';
 
-  // Work names start at the first text-like cell in the header row; everything
-  // from there on (non-empty) is a work name, in left-to-right order.
+  // Work names start at the first text-like cell in the header row. IMPORTANT:
+  // Google's CSV export sometimes blanks out header text for some columns
+  // (seen on real data) while still keeping their data cells in position —
+  // so we must NOT filter/compact blank header cells here, or the work
+  // names would shift out of alignment with the data columns. Every column
+  // from workStartCol to the end of the row is a work column, blank label or not.
   const workStartCol = headerRow.findIndex(c => isTextLike(c));
-  const works = headerRow.slice(workStartCol).map(c => c.trim()).filter(c => c !== '');
+  const works = headerRow.slice(workStartCol).map((c, i) => {
+    const t = (c || '').trim();
+    return t !== '' ? t : (FALLBACK_WORKS[i] || '');
+  });
   const nWorks = works.length;
 
   // Convention (consistent across projects): 2 identifier columns (block, villa)
