@@ -109,33 +109,63 @@ async function loadData() {
   }
 }
 
-function render(rows) {
-  const headerRow = rows[0];
+function isTextLike(c) {
+  const t = (c || '').trim();
+  if (t === '') return false;
+  if (t.toLowerCase() === 'x' || t.toLowerCase() === 'o') return false;
+  if (/^\d+%?$/.test(t)) return false;
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(t)) return false;
+  return true;
+}
 
-  // Title cell (index 0) reports the "last update" note somewhere in this row too
-  const dateMatch = headerRow.find(c => /^\s*\d{1,2}\/\d{1,2}\/\d{2,4}\s*$/.test(c));
+function findHeaderRowIndex(rows) {
+  // The real header row (work names) is whichever of the first few rows has the
+  // most "text-like" cells — robust to title/date rows placed above it, which
+  // vary in position depending on how the sheet was built.
+  let bestIdx = 0, bestCount = -1;
+  const scanLimit = Math.min(rows.length, 10);
+  for (let i = 0; i < scanLimit; i++) {
+    const count = rows[i].filter(isTextLike).length;
+    if (count > bestCount) { bestCount = count; bestIdx = i; }
+  }
+  return bestIdx;
+}
+
+function render(rows) {
+  const headerRowIdx = findHeaderRowIndex(rows);
+  const headerRow = rows[headerRowIdx];
+
+  // Look for a date anywhere in the rows above the header (title/last-update rows)
+  let dateMatch = null;
+  for (let i = 0; i <= headerRowIdx; i++) {
+    const m = rows[i].find(c => /^\s*\d{1,2}\/\d{1,2}\/\d{2,4}\s*$/.test(c || ''));
+    if (m) { dateMatch = m; break; }
+  }
   document.getElementById('updated').textContent = dateMatch
     ? `Última actualización: ${dateMatch.trim()}`
     : '';
 
-  // Work names = every non-empty cell in header row except index 0 (title) and the date cell
-  const works = headerRow
-    .map((c, idx) => ({ c: c.trim(), idx }))
-    .filter(({ c, idx }) => idx > 0 && c !== '' && !/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(c))
-    .map(({ c }) => c);
-
+  // Work names start at the first text-like cell in the header row; everything
+  // from there on (non-empty) is a work name, in left-to-right order.
+  const workStartCol = headerRow.findIndex(c => isTextLike(c));
+  const works = headerRow.slice(workStartCol).map(c => c.trim()).filter(c => c !== '');
   const nWorks = works.length;
+
+  // Convention (consistent across projects): 2 identifier columns (block, villa)
+  // immediately precede the work-status columns.
+  const blockCol = workStartCol - 2;
+  const villaCol = workStartCol - 1;
 
   // Parse remaining rows into villa rows / block-total rows
   const blocks = []; // { blockId, villas:[{name, cells:[status,...], hasAnyWork}], totalRow:[pct,...] }
   let currentBlock = null;
 
-  for (let r = 1; r < rows.length; r++) {
+  for (let r = headerRowIdx + 1; r < rows.length; r++) {
     const row = rows[r];
-    if (!row || row.length < 2) continue;
-    const blockCell = (row[0] || '').trim();
-    const villaCell = (row[1] || '').trim();
-    const rest = row.slice(2, 2 + nWorks);
+    if (!row) continue;
+    const blockCell = (row[blockCol] || '').trim();
+    const villaCell = (row[villaCol] || '').trim();
+    const rest = row.slice(workStartCol, workStartCol + nWorks);
     const isAllEmpty = rest.every(v => (v || '').trim() === '') && blockCell === '' && villaCell === '';
     if (isAllEmpty) continue;
 
