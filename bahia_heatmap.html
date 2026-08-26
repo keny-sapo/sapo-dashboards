@@ -63,7 +63,7 @@
 
 <script>
 var SHEET_ID = '1PnEElhlIXJ9UDYntImJqc1shAlDkOLrwoGCfsiXwapo';
-var CSV_URL  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=0';
+var CSV_URL  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=0';
 
 function parseCSV(text) {
   return text.split('\n').map(function (line) {
@@ -106,11 +106,17 @@ function render(rows) {
   var workRow = rows[workIdx];
   var hitoRow = workIdx > 0 ? rows[workIdx - 1] : [];
 
-  // --- Bloque contiguo de cabeceras (evita coger la fecha de la col 0) ---
+  // --- Primer no-vacio que no sea una fecha = inicio de los trabajos ---
   var last = -1;
   for (var i = workRow.length - 1; i >= 0; i--) { if (workRow[i] !== '') { last = i; break; } }
-  var WORK_START = last;
-  while (WORK_START - 1 >= 0 && workRow[WORK_START - 1] !== '') WORK_START--;
+  var WORK_START = -1;
+  for (var i = 0; i <= last; i++) {
+    var v = workRow[i];
+    if (v === '') continue;
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(v)) continue;
+    WORK_START = i; break;
+  }
+  if (WORK_START < 0) WORK_START = 0;
   var VILLA_COL = WORK_START - 1;
   if (VILLA_COL < 0) VILLA_COL = 0;
 
