@@ -91,11 +91,16 @@ function load() {
 
 function render(rows) {
   // --- Detectar la fila de trabajos: >=10 celdas con texto y ningun porcentaje ---
-  var workIdx = -1;
+  // La fila de trabajos es la que tiene MAS valores distintos: los hitos se
+  // repiten al expandir las combinaciones, los nombres de partida no.
+  var workIdx = -1, mejor = 0;
   for (var i = 0; i < Math.min(rows.length, 8); i++) {
     var ne = rows[i].filter(function (c) { return c !== ''; });
     var hasPct = ne.some(function (c) { return c.indexOf('%') !== -1; });
-    if (ne.length >= 10 && !hasPct) { workIdx = i; break; }
+    if (ne.length < 10 || hasPct) continue;
+    var dist = [];
+    for (var q = 0; q < ne.length; q++) if (dist.indexOf(ne[q]) === -1) dist.push(ne[q]);
+    if (dist.length > mejor) { mejor = dist.length; workIdx = i; }
   }
   if (workIdx === -1) {
     document.getElementById('content').innerHTML =
